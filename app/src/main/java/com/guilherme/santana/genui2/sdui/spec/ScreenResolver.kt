@@ -12,12 +12,38 @@ private val brazil = Locale.forLanguageTag("pt-BR")
 private val integer = Regex("[0-9]+")
 private val decimal = Regex("[0-9]+([,.][0-9]+)?")
 
+internal class IncompletePercentInput : IllegalArgumentException()
+
+// UI state keeps exactly what was typed, including a trailing decimal separator.
+internal fun convertInputScale(
+    state: Map<String, String>,
+    fromPercent: Set<String>,
+    toPercent: Set<String>,
+): Map<String, String> = state.mapValues { (id, raw) ->
+    val wasPercent = id in fromPercent
+    val isPercent = id in toPercent
+    if (wasPercent == isPercent || raw.isEmpty()) {
+        raw
+    } else {
+        if (!decimal.matches(raw)) throw IncompletePercentInput()
+        val amount = BigDecimal(raw.replace(',', '.'))
+        val displayed = if (isPercent) amount.movePointRight(2) else amount.movePointLeft(2)
+        displayed.stripTrailingZeros().toPlainString().replace('.', ',')
+    }
+}
+
+internal fun ScreenSpec.initialInputs(): Map<String, String> =
+    convertInputScale(initialState, emptySet(), fractionAsPercent)
+
 internal fun resolve(spec: ScreenSpec, state: Map<String, String>): List<UiNode> {
     val values = mutableMapOf<String, BigDecimal?>()
     for ((id, type) in spec.fields) {
         val raw = state[id].orEmpty()
-        val pattern = if (type == FieldType.Integer) integer else decimal
-        values[id] = if (pattern.matches(raw)) raw.replace(',', '.').toBigDecimalOrNull() else null
+        val scaled = id in spec.fractionAsPercent
+        val pattern = if (type == FieldType.Integer && !scaled) integer else decimal
+        val input = raw.takeIf(pattern::matches)?.replace(',', '.')?.toBigDecimalOrNull()
+        val value = if (scaled) input?.movePointLeft(2) else input
+        values[id] = value?.takeIf { type == FieldType.Decimal || it.stripTrailingZeros().scale() <= 0 }
     }
 
     val visiting = mutableSetOf<String>()

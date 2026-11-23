@@ -7,9 +7,16 @@ import org.json.JSONObject
 
 internal fun parseScreenSpec(json: String): ScreenSpec {
     val root = JSONObject(json)
-    require(root.getInt("schemaVersion") == 1) { "Versão de tela incompatível" }
+    val version = root.getInt("schemaVersion")
+    require(version in 1..2) { "Versão de tela incompatível" }
+    val fractionAsPercent = mutableSetOf<String>()
     val fields = root.getJSONObject("fields").entries { name ->
-        when (getJSONObject(name).getString("type")) {
+        val field = getJSONObject(name)
+        if (field.optBoolean("fractionAsPercent")) {
+            require(version >= 2) { "Escala percentual incompatível com a versão da tela" }
+            fractionAsPercent.add(name)
+        }
+        when (field.getString("type")) {
             "integer" -> FieldType.Integer
             "decimal" -> FieldType.Decimal
             else -> error("Tipo de campo desconhecido: $name")
@@ -57,7 +64,7 @@ internal fun parseScreenSpec(json: String): ScreenSpec {
             else -> error("Componente desconhecido: $type")
         }
     }
-    return ScreenSpec(fields, initial, computed, children(root.getJSONArray("children")))
+    return ScreenSpec(fields, initial, computed, children(root.getJSONArray("children")), fractionAsPercent)
 }
 
 private fun expression(obj: JSONObject): Expression {

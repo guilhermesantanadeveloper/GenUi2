@@ -10,6 +10,9 @@ import com.guilherme.santana.genui2.data.ScreenPreview
 import com.guilherme.santana.genui2.data.reviseScreen
 import com.guilherme.santana.genui2.data.requestScreen
 import com.guilherme.santana.genui2.sdui.ScreenEvent
+import com.guilherme.santana.genui2.sdui.spec.IncompletePercentInput
+import com.guilherme.santana.genui2.sdui.spec.convertInputScale
+import com.guilherme.santana.genui2.sdui.spec.initialInputs
 import com.guilherme.santana.genui2.sdui.spec.RESET_FIELDS
 import com.guilherme.santana.genui2.sdui.spec.ScreenSpec
 import com.guilherme.santana.genui2.sdui.spec.parseScreenSpec
@@ -82,12 +85,14 @@ internal class GenUiViewModel(private val app: Application) : AndroidViewModel(a
             try {
                 val loaded = withContext(Dispatchers.IO) { load() }
                 val screen = loaded.screen
-                if (preserveFields) {
+                val next = if (preserveFields) {
                     val previous = requireNotNull(currentPreview).screen
                     require(screen.fields == previous.fields && screen.computed == previous.computed &&
                         screen.initialState == previous.initialState) { "O ajuste alterou a definição da calculadora" }
+                    convertInputScale(fields, previous.fractionAsPercent, screen.fractionAsPercent)
+                } else {
+                    screen.initialInputs()
                 }
-                val next = if (preserveFields) fields else screen.initialState
                 val nodes = resolve(screen, next)
                 currentPreview = loaded
                 fields = next
@@ -101,6 +106,7 @@ internal class GenUiViewModel(private val app: Application) : AndroidViewModel(a
                 Log.e("GenUiScreen", "Falha ao abrir a prévia", failure)
                 val message = when (failure) {
                     is ScreenApiException -> failure.detail ?: app.getString(R.string.server_error)
+                    is IncompletePercentInput -> app.getString(R.string.incomplete_percent_input)
                     is SocketTimeoutException -> app.getString(R.string.request_timeout)
                     is IOException -> app.getString(ioErrorMessage)
                     else -> app.getString(R.string.screen_load_error)
@@ -126,7 +132,7 @@ internal class GenUiViewModel(private val app: Application) : AndroidViewModel(a
                 }
             }
             is ScreenEvent.ActionRequested -> {
-                if (event.action.name == RESET_FIELDS) applyFields(screen, screen.initialState)
+                if (event.action.name == RESET_FIELDS) applyFields(screen, screen.initialInputs())
             }
         }
     }
