@@ -10,4 +10,9 @@
     <string name="connection_error">Não foi possível conectar ao servidor. Confira se ele está rodando e se o adb reverse está ativo.</string>
     <string name="request_timeout">O servidor demorou para responder. Tente novamente.</string>
     <string name="server_error">O servidor recusou o pedido. Confira o terminal do servidor e tente novamente.</string>
+    <string name="adjust_screen">Ajustar tela</string>
+    <string name="layout_feedback_label">O que ajustar na apresentação?</string>
+    <string name="layout_feedback_example">Exiba as taxas em porcentagem ou agrupe os resultados no topo.</string>
+    <string name="apply_layout">Aplicar ajuste</string>
+    <string name="incomplete_percent_input">Conclua ou limpe o número que deseja converter em porcentagem e aplique o ajuste novamente.</string>
 </resources>

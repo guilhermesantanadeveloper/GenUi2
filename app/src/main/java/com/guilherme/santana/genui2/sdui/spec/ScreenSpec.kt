@@ -8,6 +8,7 @@ internal data class ScreenSpec(
     val initialState: Map<String, String>,
     val computed: Map<String, Expression>,
     val children: List<ComponentSpec>,
+    val fractionAsPercent: Set<String> = emptySet(),
 )
 
 internal enum class FieldType { Integer, Decimal }
