@@ -1,4 +1,13 @@
 <resources>
     <string name="app_name">GenUi2</string>
     <string name="screen_load_error">Não foi possível carregar a tela.</string>
+    <string name="request_title">O que você quer calcular?</string>
+    <string name="request_label">Descreva a calculadora</string>
+    <string name="generate_screen">Gerar tela</string>
+    <string name="back_to_request">Voltar ao pedido</string>
+    <string name="open_example">Abrir exemplo local</string>
+    <string name="prompt_too_long">Use até %1$d caracteres.</string>
+    <string name="connection_error">Não foi possível conectar ao servidor. Confira se ele está rodando e se o adb reverse está ativo.</string>
+    <string name="request_timeout">O servidor demorou para responder. Tente novamente.</string>
+    <string name="server_error">O servidor recusou o pedido. Confira o terminal do servidor e tente novamente.</string>
 </resources>
