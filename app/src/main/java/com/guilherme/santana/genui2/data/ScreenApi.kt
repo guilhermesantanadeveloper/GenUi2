@@ -10,11 +10,19 @@ import java.net.URL
 
 internal class ScreenApiException(val detail: String?) : IOException(detail)
 
-internal fun requestScreen(prompt: String): ScreenSpec {
-    val endpoint = URL("http://127.0.0.1:8000/screens/generate")
+internal data class ScreenPreview(val screen: ScreenSpec, val draftJson: String? = null)
+
+internal fun requestScreen(prompt: String): ScreenPreview =
+    postPreview("preview", JSONObject().put("prompt", prompt))
+
+internal fun reviseScreen(draftJson: String, feedback: String): ScreenPreview =
+    postPreview("revise", JSONObject().put("draft", JSONObject(draftJson)).put("prompt", feedback))
+
+private fun postPreview(route: String, request: JSONObject): ScreenPreview {
+    val endpoint = URL("http://127.0.0.1:8000/screens/$route")
     val connection = endpoint.openConnection() as HttpURLConnection
     try {
-        val payload = JSONObject().put("prompt", prompt).toString().toByteArray(Charsets.UTF_8)
+        val payload = request.toString().toByteArray(Charsets.UTF_8)
         connection.requestMethod = "POST"
         connection.instanceFollowRedirects = false
         connection.connectTimeout = 5_000
@@ -32,7 +40,11 @@ internal fun requestScreen(prompt: String): ScreenSpec {
             }
             throw ScreenApiException(detail)
         }
-        return connection.inputStream.bufferedReader(Charsets.UTF_8).use { parseScreenSpec(it.readText()) }
+        val response = connection.inputStream.bufferedReader(Charsets.UTF_8).use { JSONObject(it.readText()) }
+        return ScreenPreview(
+            screen = parseScreenSpec(response.getJSONObject("screen").toString()),
+            draftJson = response.getJSONObject("draft").toString(),
+        )
     } finally {
         connection.disconnect()
     }

@@ -2,12 +2,14 @@ package com.guilherme.santana.genui2.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,10 +34,21 @@ internal fun GenUiScreen(viewModel: GenUiViewModel, modifier: Modifier = Modifie
     if (nodes != null) {
         BackHandler(onBack = viewModel::closePreview)
         Column(modifier.fillMaxSize()) {
-            TextButton(onClick = viewModel::closePreview) {
-                Text(stringResource(R.string.back_to_request))
+            Row {
+                TextButton(onClick = viewModel::closePreview) {
+                    Text(stringResource(R.string.back_to_request))
+                }
+                if (state.canRevise) {
+                    TextButton(onClick = { viewModel.changeFeedback("") }) {
+                        Text(stringResource(R.string.adjust_screen))
+                    }
+                }
             }
             RenderScreen(nodes, viewModel::onEvent, Modifier.weight(1f))
+        }
+        state.feedback?.let { feedback ->
+            LayoutFeedbackDialog(feedback, state.loading, state.error, viewModel::changeFeedback,
+                viewModel::revise, viewModel::dismissFeedback)
         }
         return
     }
@@ -74,4 +87,48 @@ internal fun GenUiScreen(viewModel: GenUiViewModel, modifier: Modifier = Modifie
             Text(stringResource(R.string.open_example))
         }
     }
+}
+
+@Composable
+private fun LayoutFeedbackDialog(
+    feedback: String,
+    loading: Boolean,
+    error: String?,
+    onChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val length = feedback.trim().length
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.adjust_screen)) },
+        text = {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.small),
+            ) {
+                OutlinedTextField(
+                    value = feedback,
+                    onValueChange = onChange,
+                    enabled = !loading,
+                    label = { Text(stringResource(R.string.layout_feedback_label)) },
+                    placeholder = { Text(stringResource(R.string.layout_feedback_example)) },
+                    minLines = 2,
+                    maxLines = 5,
+                    isError = length > MAX_PROMPT_LENGTH,
+                )
+                if (length > MAX_PROMPT_LENGTH) Text(stringResource(R.string.prompt_too_long, MAX_PROMPT_LENGTH))
+                if (loading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSubmit, enabled = !loading && length in 1..MAX_PROMPT_LENGTH) {
+                Text(stringResource(R.string.apply_layout))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) }
+        },
+    )
 }
