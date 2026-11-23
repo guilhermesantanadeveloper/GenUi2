@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GenUi2</string>
+    <string name="screen_load_error">Não foi possível carregar a tela.</string>
 </resources>

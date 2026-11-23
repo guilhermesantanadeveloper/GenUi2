@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "fields": {
+    "km_por_mes": { "type": "integer" },
+    "consumo": { "type": "decimal" },
+    "preco_litro": { "type": "decimal" },
+    "seguro": { "type": "decimal" },
+    "estacionamento": { "type": "decimal" }
+  },
+  "initialState": {
+    "km_por_mes": "800", "consumo": "10", "preco_litro": "6,00",
+    "seguro": "180", "estacionamento": "120"
+  },
+  "computed": {
+    "combustivel": {
+      "op": "multiply",
+      "args": [
+        { "op": "divide", "args": [{ "ref": "km_por_mes" }, { "ref": "consumo" }] },
+        { "ref": "preco_litro" }
+      ]
+    },
+    "total_mensal": {
+      "op": "add",
+      "args": [{ "ref": "combustivel" }, { "ref": "seguro" }, { "ref": "estacionamento" }]
+    }
+  },
+  "children": [
+    { "id": "titulo", "type": "text", "text": "Meu carro", "role": "title" },
+    { "id": "subtitulo", "type": "text", "text": "Estimativa mensal" },
+    { "id": "resumo", "type": "card", "children": [
+      { "id": "rotulo_total", "type": "text", "text": "Total por mês" },
+      { "id": "total", "type": "text", "bind": "total_mensal", "format": "BRL", "role": "highlight" }
+    ] },
+    { "id": "distancia", "type": "input", "bind": "km_por_mes", "label": "Distância mensal", "suffix": "km" },
+    { "id": "consumo_carro", "type": "input", "bind": "consumo", "label": "Consumo do carro", "suffix": "km/L" },
+    { "id": "preco", "type": "input", "bind": "preco_litro", "label": "Preço do litro", "suffix": "R$/L" },
+    { "id": "titulo_despesas", "type": "text", "text": "Despesas" },
+    { "id": "despesas", "type": "list", "items": [
+      { "id": "linha_combustivel", "title": "Combustível", "bind": "combustivel", "format": "BRL" },
+      { "id": "linha_seguro", "title": "Seguro", "bind": "seguro", "format": "BRL" },
+      { "id": "linha_estacionamento", "title": "Estacionamento", "bind": "estacionamento", "format": "BRL" }
+    ] },
+    { "id": "restaurar", "type": "button", "label": "Restaurar valores iniciais", "action": "reset_fields" }
+  ]
+}
